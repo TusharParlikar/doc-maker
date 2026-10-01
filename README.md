@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-d97757)](#claude-code-plugin-recommended)
-[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-SKILL.md-555)](https://agentskills.io)
+[![Agent Skills compatible](https://img.shields.io/badge/Agent_Skills-compatible-2ea44f)](https://agentskills.io)
 
 Doc Maker turns an AI coding agent into a careful technical writer. It reads the code before it writes anything, so the documentation it produces describes the project that exists rather than the one the agent imagines.
 
@@ -20,12 +20,14 @@ Works with **Claude Code**, **Claude.ai**, **Claude Desktop**, and any agent tha
 ## Contents
 
 - [Why Doc Maker](#why-doc-maker)
+- [How it compares](#how-it-compares)
 - [How it works](#how-it-works)
 - [Install](#install)
 - [Quick start](#quick-start)
 - [What you get](#what-you-get)
 - [Rule index](#rule-index)
 - [Principles](#principles)
+- [Limitations](#limitations)
 - [Update and uninstall](#update-and-uninstall)
 - [FAQ](#faq)
 - [Contributing](#contributing)
@@ -61,6 +63,85 @@ Documentation tends to fail in the same few ways:
 - **Projects with no code yet.** The skills document what exists; they are not a product-spec generator.
 - **Marketing copy.** The skills avoid unsupported claims such as "best" or "fastest" by design.
 - **API reference generation at scale.** For large public APIs, use a generator that reads your OpenAPI spec or docstrings (for example Swagger UI, Redoc, Sphinx or TypeDoc). Doc Maker can explain and link to that output.
+
+---
+
+## How it compares
+
+Several tools already generate documentation from code. They solve different parts of the problem, and some pair well with Doc Maker.
+
+### The alternatives
+
+| Tool | What it is | Output | Model |
+|------|------------|--------|-------|
+| [DeepWiki](https://deepwiki.com) (Cognition) | Hosted, AI-generated wiki for GitHub repositories, with diagrams and chat Q&A over the code | Web wiki on deepwiki.com | Hosted service; free for public repositories |
+| [Code Wiki](https://codewiki.google) (Google) | Gemini-powered wiki that regenerates after code changes, with diagrams and a chat agent | Hosted web wiki | Public preview, public repositories |
+| [readme-ai](https://github.com/eli64s/readme-ai) | Open-source Python CLI that generates a README using OpenAI, Anthropic, Gemini or Ollama | One `README.md` | Open source (MIT) |
+| [Mintlify](https://mintlify.com) | Documentation hosting platform with an AI writing agent and assistant | Hosted docs site | SaaS: free Starter plan, paid Enterprise |
+| [Swimm](https://swimm.io) | Code-coupled documentation that flags docs when the code they reference changes | Docs in IDE, PRs and Swimm | Commercial, pricing on request |
+| [tbls](https://github.com/k1LoW/tbls), [SchemaSpy](https://schemaspy.org) | Database documentation generators that read a live schema | Markdown/HTML + ER diagrams | Open source |
+| Claude Code `/init` | Built-in command that writes a `CLAUDE.md` | Context file for the agent, not human docs | Built in |
+| A plain prompt ("write a README") | Ask any AI agent with no rules | Whatever the model decides | Built in |
+
+### Feature matrix
+
+Facts are taken from each project's own documentation (see [Sources](#sources)); "–" means not a documented feature.
+
+| | Doc Maker | DeepWiki | Code Wiki | readme-ai | Mintlify | Swimm | tbls / SchemaSpy |
+|--|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| Docs saved as files in your repository | ✅ | – | – | ✅ | ✅ (docs repo) | ✅ | ✅ |
+| Full doc set (architecture, ADRs, security, ops, roadmap) | ✅ | partial² | partial² | – | – | – | – |
+| Database ER diagram + data dictionary | ✅ | – | – | – | – | – | ✅ |
+| Labels unverified claims as assumptions | ✅ | – | – | – | – | – | n/a |
+| Audience modes (developer / product / executive) | ✅ | – | – | – | – | – | – |
+| Competitor analysis with cited sources | ✅ | – | – | – | – | – | – |
+| Auto-updates when code changes | – | ✅ | ✅ | – | ✅ (agent automations) | ✅ (synced snippets) | ✅ (in CI) |
+| Chat Q&A over the codebase | via your agent | ✅ | ✅ | – | over docs | ✅ | – |
+| Hosted docs site | – | ✅ | ✅ | – | ✅ | ✅ | – |
+| Deterministic output (same input, same result) | – | – | – | – | – | – | ✅ |
+| Works on private code with no extra service¹ | ✅ | – | – | ✅ | – | – | ✅ |
+| Cost | Free (MIT) + your agent's usage | Free for public repos | Free preview | Free + LLM API usage | Free tier / Enterprise | Paid | Free |
+
+¹ Your code still goes to whichever model provider your agent or CLI uses. "No extra service" means no additional third party beyond that.
+
+² Covers architecture, modules and diagrams. Design rationale, operations, limitations and roadmap are not documented features.
+
+### How Doc Maker is different
+
+These are design differences, not quality claims. Judge the output on your own project.
+
+- **It is a rule set, not a service.** Doc Maker runs inside the agent you already use (Claude Code, Claude.ai, Cursor, Codex, Gemini CLI). There is no account, server or extra API key, and the docs land in your repository where you review them in a pull request.
+- **It covers the "why", not just the "what".** Code-reading wikis describe structure: modules, files, call graphs. Doc Maker also asks for the problem being solved, design decisions and trade-offs (ADRs), when *not* to use the project, limitations and a roadmap.
+- **It is built against hallucination.** Rules require evidence for each claim, a label on anything unverified, and a quality pass that re-checks commands, paths and names against the code. Diagrams must match the real schema and services.
+- **It writes for different readers.** The same codebase can produce developer docs, a product overview or an executive summary.
+- **It goes deep on databases.** Twenty rules (41-60) add what schema tools don't: why the database was chosen, which queries each index serves, transaction boundaries, data lifecycle and security, with discrepancies between schema, ORM and code reported instead of guessed.
+
+### Where the alternatives are stronger
+
+- **Always up to date:** DeepWiki, Code Wiki, Mintlify, Swimm and tbls can refresh docs automatically. With Doc Maker, you re-run it (see [GUIDE.md](GUIDE.md#8-keep-docs-up-to-date)).
+- **Zero setup for public repos:** DeepWiki and Code Wiki need only a URL.
+- **Repeatable output:** tbls and SchemaSpy produce the same result every run and can fail CI on schema drift. Doc Maker's output is LLM-generated and varies between runs.
+- **Hosting and search:** Mintlify gives you a docs website with search and analytics. Doc Maker writes Markdown only.
+
+### Use them together
+
+- **tbls or SchemaSpy + `database-docs`:** let the tool generate the exact schema reference in CI, and let Doc Maker explain the design, relationships and trade-offs around it.
+- **Mintlify (or MkDocs, Docusaurus) + `doc-maker`:** let Doc Maker draft the content, and let the platform host it.
+- **DeepWiki for exploring + Doc Maker for shipping:** use a hosted wiki to understand an unfamiliar repository, then use Doc Maker to write docs that live in that repository.
+
+<a id="sources"></a>
+
+**Sources** (checked October 2026; products change, so verify before relying on a detail):
+[DeepWiki overview](https://huggingface.co/blog/lynn-mikami/deepwiki) ·
+[Google Code Wiki announcement coverage](https://www.theregister.com/2025/11/17/google_previews_code_wiki/) ·
+[Code Wiki features](https://devops.com/google-code-wiki-aims-to-solve-documentations-oldest-problem/) ·
+[readme-ai on PyPI](https://pypi.org/project/readmeai) ·
+[Mintlify pricing review](https://www.featurebase.app/blog/mintlify-pricing) ·
+[Mintlify agent docs](https://www.mintlify.com/docs/ai/agent) ·
+[Swimm features](https://docs.swimm.io/features) ·
+[Swimm sw.md format](https://swimm.io/blog/docs-as-code-understanding-swimm-sw-md-markdown-format/) ·
+[tbls README](https://github.com/k1LoW/tbls) ·
+[SchemaSpy docs](https://schemaspy.readthedocs.io/en/v6.0.0/)
 
 ---
 
@@ -251,6 +332,17 @@ The full text of each rule is in the skill files: [`skills/doc-maker/SKILL.md`](
 - **No secrets.** Real keys, tokens, passwords and production data never appear. Placeholders are used instead.
 - **Read-only.** While documenting, the agent never writes, migrates or deletes data, and it does not commit unless asked.
 - **Implemented vs recommended.** Suggested improvements (an index, a backup policy) are labelled as recommendations, separate from what exists.
+
+---
+
+## Limitations
+
+- **Output varies between runs.** The docs are written by an LLM. Two runs on the same repository won't produce identical text. Review before you commit.
+- **No automatic refresh.** Docs don't update when code changes; re-run the skill or add the refresh prompt from [GUIDE.md](GUIDE.md#8-keep-docs-up-to-date) to your release checklist.
+- **Quality depends on the agent.** A stronger model and an agent that can run commands produce better-verified docs. On Claude.ai without repository access, the skill can only use what you upload.
+- **Large repositories cost tokens and time.** Evidence gathering reads many files. On a large monorepo, scope the request to one service or folder.
+- **Markdown only.** No hosting, search or versioned docs site. Pair it with MkDocs, Docusaurus or Mintlify if you need one.
+- **Competitor facts age.** Comparisons use web search at the time of the run, and products change.
 
 ---
 
