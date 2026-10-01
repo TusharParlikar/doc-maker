@@ -1,0 +1,10 @@
+{
+  "name": "doc-maker",
+  "description": "Evidence-based project documentation skills: doc-maker (README, architecture, features, ADRs, comparisons, Mermaid diagrams) and database-docs (schema, ER diagram, indexes, migrations, data dictionary).",
+  "version": "1.0.0",
+  "author": {
+    "name": "Tushar"
+  },
+  "license": "MIT",
+  "keywords": ["documentation", "readme", "architecture", "mermaid", "er-diagram", "database", "skills"]
+}

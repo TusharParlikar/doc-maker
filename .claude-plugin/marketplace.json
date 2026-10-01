@@ -1,0 +1,14 @@
+{
+  "name": "doc-maker",
+  "description": "Documentation skills for Claude: doc-maker and database-docs.",
+  "owner": {
+    "name": "Tushar"
+  },
+  "plugins": [
+    {
+      "name": "doc-maker",
+      "source": "./",
+      "description": "Evidence-based project documentation skills: doc-maker and database-docs."
+    }
+  ]
+}
