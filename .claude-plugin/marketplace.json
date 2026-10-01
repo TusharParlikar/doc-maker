@@ -9,7 +9,7 @@
     {
       "name": "doc-maker",
       "source": "./",
-      "description": "Evidence-based project documentation skills: doc-maker, database-docs and architecture-docs (85 rules)."
+      "description": "Evidence-based documentation skills: doc-maker, database-docs and architecture-docs (51 rules, evidence script, eval suite)."
     }
   ]
 }

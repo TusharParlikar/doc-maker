@@ -19,3 +19,8 @@ dist/
 # Owner launch kit
 GITHUB.md
 V2.md
+
+# Eval run output
+evals/results/
+__pycache__/
+docs-check.json

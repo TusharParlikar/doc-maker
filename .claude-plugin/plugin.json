@@ -1,8 +1,8 @@
 {
   "name": "doc-maker",
   "displayName": "Doc Maker",
-  "description": "Evidence-based project documentation skills: doc-maker (README, architecture, features, ADRs, comparisons, Mermaid diagrams), database-docs (schema, ER diagram, indexes, migrations, data dictionary) and architecture-docs (auth and roles, deployment, cloud, CI/CD, integrations, caching, queues, DR, cost, threat model, tech debt).",
-  "version": "1.1.1",
+  "description": "Evidence-based documentation skills with a read-only evidence script, templates and an eval suite: doc-maker (README, architecture, ADRs, API, limitations), database-docs (ER diagram from real foreign keys, data dictionary, migrations) and architecture-docs (auth and roles, threat model, deployment, CI/CD, DR, cost, tech debt).",
+  "version": "2.0.0",
   "author": {
     "name": "Tushar Parlikar",
     "url": "https://github.com/TusharParlikar"
@@ -33,6 +33,8 @@
     "ci-cd",
     "infrastructure",
     "devops",
-    "security"
+    "security",
+    "evals",
+    "evidence-based"
   ]
 }

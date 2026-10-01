@@ -1,0 +1,26 @@
+name: checks
+
+on:
+  push:
+    branches: [main, v2]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  free-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: evidence.py self-check (incl. eval trap fixtures)
+        run: python tests/test_evidence.py
+      - name: skills consistency
+        run: python tests/test_skills.py
+      - name: docs in this repo have no broken links or anchors
+        run: |
+          python skills/doc-maker/scripts/evidence.py docs . > docs-check.json
+          python -c "import json,sys; d=json.load(open('docs-check.json')); bad={k: d[k]['count'] for k in ('broken_links','broken_anchors','commands_not_found')}; print(bad); sys.exit(any(bad.values()))"

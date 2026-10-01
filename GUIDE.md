@@ -12,8 +12,11 @@ This guide shows how to get good documentation out of the `doc-maker`, `database
 6. [Database documentation](#6-database-documentation)
 7. [Review the result](#7-review-the-result)
 8. [Keep docs up to date](#8-keep-docs-up-to-date)
-9. [Customize the rules](#customize-the-rules)
-10. [Troubleshooting](#10-troubleshooting)
+9. [Feedback and preferences](#9-feedback-and-preferences)
+10. [The evidence script](#10-the-evidence-script)
+11. [Rule index](#11-rule-index)
+12. [Customize the rules](#customize-the-rules)
+13. [Troubleshooting](#13-troubleshooting)
 
 ---
 
@@ -23,7 +26,7 @@ An agent loads only each skill's name and description at startup. When your requ
 
 | Skill | Triggers on requests such as |
 |-------|------------------------------|
-| `doc-maker` | "document this project", "write / rewrite the README", "explain the architecture", "write developer / product / executive docs" |
+| `doc-maker` | "document this project", "write / rewrite the README", "check our docs against the code", "write developer / product / executive docs". **Not** plain questions such as "how does auth work here?" |
 | `database-docs` | "ER diagram", "document the schema", "data dictionary", "document the database", or when `doc-maker` finds a database |
 | `architecture-docs` | "threat model", "role-permission matrix", "document our CI/CD / deployment / infrastructure", "sequence diagrams", "disaster recovery", "cost breakdown", "technical debt", or when `doc-maker` needs architecture or operations depth |
 
@@ -49,20 +52,24 @@ sequenceDiagram
     participant Web as Web search (optional)
 
     You->>Agent: "Document this project"
-    Agent->>Repo: Read file tree, dependencies, config, routes, schema, tests, CI
+    Agent->>Repo: Read .doc-maker.md preferences (if present)
+    Agent->>Repo: evidence.py inventory, env, deps, routes, schema
+    Agent->>Repo: Open the files the script points to
     opt Database present
         Agent->>DB: Read-only introspection and EXPLAIN
     end
     opt Competitor comparison requested
         Agent->>Web: Search, collect sources
     end
-    Agent->>Agent: Relevance pass over rules 1-85
-    Agent->>Repo: Write README.md and docs/*.md
-    Agent->>Agent: Re-check commands, paths, links, names
-    Agent->>You: Summary, audience, assumptions, open questions
+    Agent->>Agent: Pick rules by tier (1 always, 2 if present, 3 on request)
+    Agent->>Repo: Write README.md and docs/*.md from templates
+    Agent->>Repo: evidence.py docs (links, commands, endpoints, env vars)
+    Agent->>You: Evidence score per section, assumptions, open questions
+    You->>Agent: "Security section is too shallow"
+    Agent->>Repo: Revise only that section
 ```
 
-Expect the agent to read a lot of files before it writes anything. That is the point: it is collecting evidence. On a large repository, a full documentation set can take several minutes.
+Expect the agent to collect evidence before it writes anything. On a large repository, a full documentation set can take several minutes.
 
 ---
 
@@ -234,7 +241,7 @@ and the indexes each important query uses.
 
 ### Example output: API ↔ database documentation
 
-This is what rules 43, 55, 63, 64 and 65 produce together. The project below is a **made-up shop API** used only to show the format; on your project, every box, table and arrow comes from your real routes, models and migrations.
+This is what rules DB3, DB10, A4 and A5 produce together. The project below is a **made-up shop API** used only to show the format; on your project, every box, table and arrow comes from your real routes, models and migrations.
 
 Prompt:
 
@@ -244,7 +251,7 @@ endpoints read and write which tables, the transaction for placing an order, and
 order status lifecycle.
 ```
 
-#### 1. Request path through the layers (rule 55)
+#### 1. Request path through the layers (DB10)
 
 How one request travels from the API to the database and back, with the code location of each layer.
 
@@ -260,7 +267,7 @@ flowchart LR
     DB --> ORM --> Repo --> S --> R -->|JSON| C
 ```
 
-#### 2. Which endpoints touch which tables (rule 63)
+#### 2. Which endpoints touch which tables (DB10)
 
 **Red** arrows write, **blue** arrows only read. Tables that many endpoints write to (here `orders`) are where most bugs and lock contention hide. The table underneath gives the detail for each arrow.
 
@@ -310,7 +317,7 @@ The same mapping as a table, which is easier to review in a pull request:
 
 The ⚠️ rows are the kind of finding the skill reports instead of hiding.
 
-#### 3. Data model behind those endpoints (rule 43)
+#### 3. Data model behind those endpoints (DB3)
 
 Only relationships that exist as foreign keys are drawn as solid lines.
 
@@ -354,7 +361,7 @@ erDiagram
     }
 ```
 
-#### 4. One write, step by step (rule 65)
+#### 4. One write, step by step (A4)
 
 `POST /orders` with its transaction boundary, plus the failure path when stock runs out.
 
@@ -384,7 +391,7 @@ sequenceDiagram
     end
 ```
 
-#### 5. What the API can do to an order (rule 64)
+#### 5. What the API can do to an order (A5)
 
 States come from the `orders.status` column; each arrow names the endpoint or job that causes it.
 
@@ -425,7 +432,7 @@ git diff
 
 ## 8. Keep docs up to date
 
-The skills include rules for maintainability (rule 38) and automation (rule 39), so the docs name the code they depend on. To refresh them after a change:
+The skills include rules for keeping docs current (D19, and A19 for a full checklist), so the docs name the code they depend on. To refresh them after a change:
 
 ```text
 I changed the auth flow in src/auth/. Update every doc that describes authentication,
@@ -440,34 +447,120 @@ A good habit: run the second prompt before each release.
 
 ---
 
+## 9. Feedback and preferences
+
+When the agent hands over, it lists each section with an **evidence score**:
+
+| Score | Meaning |
+|-------|---------|
+| high | Every claim was checked in the code or by running a command |
+| medium | Some claims are labelled assumptions |
+| low | Mostly inferred: little code access or no evidence for key claims |
+
+Reply with what to change, in plain words. The agent revises **only** those sections and summarises the change:
+
+```text
+The security section is too shallow, and skip the roadmap.
+```
+
+To make a preference stick across runs, say so ("always skip the roadmap"). The agent offers to save it in `.doc-maker.md` at the repository root and writes the file only if you agree. Every run reads it first. You can also write it yourself:
+
+```markdown
+# Doc Maker preferences
+- Audience: backend developers joining the team
+- Tone: plain, no marketing words
+- Skip: roadmap, competitor comparison
+- README length: short (under 1,000 words)
+- Terms: say "workspace", never "tenant"
+```
+
+Preferences change defaults, not safety rules: secrets are never printed and nothing is invented, whatever the file says. Never put secrets in it.
+
+---
+
+## 10. The evidence script
+
+Each skill ships `scripts/evidence.py`: Python 3.8+ standard library only, read-only, JSON output with `file:line` locations. The agent runs it; you can too:
+
+```bash
+python3 skills/doc-maker/scripts/evidence.py inventory /path/to/repo
+```
+
+| Command | Reports |
+|---------|---------|
+| `inventory` | Languages, manifests, entry points, CI, containers, Kubernetes, IaC, platform files, docs, env examples, database files, tests |
+| `env` | Env vars read in code (including pydantic settings and compose `${VAR}`) vs keys in `.env.example`-style files; real `.env` files present. Key names only, never values |
+| `deps` | Direct dependencies from package.json, requirements, pyproject, go.mod, Cargo.toml, pom.xml, Gemfile, composer.json |
+| `routes` | HTTP routes for Express/Koa/Fastify, FastAPI, Flask, Django, Spring, Rails, Next.js (heuristic: the agent confirms each one) |
+| `schema` | Tables, columns, keys, indexes from SQLite files (opened read-only), SQL and migrations (including `ALTER TABLE` foreign keys), Prisma, Django, SQLAlchemy, SQLModel |
+| `docs` | Broken links and anchors, commands that don't exist (npm scripts, make targets, missing package.json or Makefile), endpoints not in the code, env vars the code never reads |
+
+Without Python, the agent reads the same files by hand. The results are the same in kind, but slower to get and easier to miss.
+
+---
+
+## 11. Rule index
+
+Each rule in the skill files has **Look for** (evidence and where to find it), **Verify** (what to check before writing) and **Output** (where it goes and how long). Tier 1 = always, Tier 2 = when the project has it, Tier 3 = on request.
+
+### `doc-maker` (D1-D20)
+
+| Tier | Rules |
+|------|-------|
+| 1 | D1 Overview and problem · D3 Features · D4 Quick start · D5 Configuration · D6 Architecture summary · D14 Limitations |
+| 2 | D2 Users and use cases · D7 Tech stack rationale · D8 Project structure · D9 API / CLI / library · D10 AI/ML pipeline · D11 Testing · D12 Deployment, security, operations summary · D13 ADRs · D17 Glossary · D19 Keeping docs current |
+| 3 | D15 Roadmap · D16 Competitor comparison |
+| Always applied | D18 Diagrams · D20 Final check |
+
+### `database-docs` (DB1-DB12)
+
+| Tier | Rules |
+|------|-------|
+| 1 | DB1 Overview and technology choice · DB2 Schema and data dictionary · DB3 ER diagram and relationships |
+| 2 | DB4 Design and normalization · DB5 Indexes and query performance · DB6 Migrations · DB7 Seed data · DB8 Transactions · DB9 Security and sensitive data · DB10 App ↔ database mapping · DB11 Lifecycle and retention · DB12 Backup and restore |
+
+### `architecture-docs` (A1-A19)
+
+| Tier | Rules |
+|------|-------|
+| 1 | A3 Components and dependency graph · A4 Key flows (sequence diagrams) · A6 Deployment and environments |
+| 2 | A1 Auth and role matrix · A5 Entity lifecycles · A7 Cloud infrastructure · A8 CI/CD · A9 External services and APIs · A10 Caching · A11 Queues and events · A12 Logging and monitoring · A13 Error handling · A14 Disaster recovery |
+| 3 | A2 Threat model and privacy · A15 Scalability and bottlenecks · A16 Cost · A17 Technical debt · A18 Future architecture · A19 Docs change checklist |
+
+Upgrading from 1.x, where rules were numbered 1-85? [CHANGELOG.md](CHANGELOG.md) maps every old number to its new ID.
+
+---
+
 <a id="customize-the-rules"></a>
 
-## 9. Customize the rules
+## 12. Customize the rules
 
 The rules are plain Markdown. To change them:
 
 1. Fork this repository.
-2. Edit the `SKILL.md` file under `skills/doc-maker/`, `skills/database-docs/` or `skills/architecture-docs/`.
-3. Keep the YAML front matter at the top of each file valid:
-   - `name`: lowercase letters, numbers and hyphens, the same as the folder name
-   - `description`: what the skill does **and** when to use it, under 1024 characters. The agent uses this text to decide when to load the skill.
-4. Validate the plugin:
+2. Edit the `SKILL.md` file under `skills/doc-maker/`, `skills/database-docs/` or `skills/architecture-docs/`. Keep the rule shape: `**ID. Name** · Tier N`, then **Look for**, **Verify**, **Output**.
+3. Keep the YAML front matter valid: `name` is the folder name; `description` says what the skill does **and** when to use it, under 1024 characters. The agent uses the description to decide when to load the skill.
+4. If you change `evidence.py`, copy it to all three `skills/*/scripts/` folders.
+5. Run the free checks:
 
    ```bash
+   python3 tests/test_evidence.py
+   python3 tests/test_skills.py
    claude plugin validate --strict .
    ```
 
-5. Raise `version` in `.claude-plugin/plugin.json`, then push. Plugin users receive the change when they run `claude plugin update doc-maker@doc-maker`.
+6. To measure the effect of a change, run the eval suite (see [evals/README.md](evals/README.md); it costs model usage).
+7. Raise `version` in `.claude-plugin/plugin.json`, then push. Plugin users receive the change with `claude plugin update doc-maker@doc-maker`.
 
 Ideas for team-specific changes:
 
-- Add your company's documentation template to the "Layout" step.
+- Put your company's README layout in `references/readme-template.md`.
 - Add required sections, such as an on-call runbook or a data-retention table.
-- Remove rules your team never needs, such as competitor analysis for internal tools.
+- Move rules your team never needs to Tier 3, or delete them.
 
 ---
 
-## 10. Troubleshooting
+## 13. Troubleshooting
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
@@ -476,7 +569,9 @@ Ideas for team-specific changes:
 | Two copies of each skill | Installed as a plugin **and** copied into `~/.claude/skills/` | Keep one: uninstall the plugin, or delete the copied folders |
 | `Plugin "doc-maker" not found in marketplace` | Marketplace not added | Run `claude plugin marketplace add TusharParlikar/doc-maker` first |
 | Old rules after an update | Auto-update is off by default for third-party marketplaces | Run `claude plugin update doc-maker@doc-maker`, or turn on auto-update for the marketplace in `/plugin` > **Marketplaces** |
+| `python: command not found` when the agent runs `evidence.py` | No Python 3.8+ on the path | Install Python, or let the agent read files by hand (slower, less thorough) |
+| `evidence.py` reports a route or table that doesn't exist | Heuristic match (commented-out code, test fixtures, strings) | Expected occasionally: the skills tell the agent to open each location before documenting it |
 | Claude.ai rejects the upload | Zip doesn't contain the skill folder at its root | Zip the `doc-maker` folder itself, so the zip holds `doc-maker/SKILL.md` |
-| Docs are too long | No audience or scope given | State the audience and the files you want (see [section 5](#5-control-the-output)) |
-| Docs describe things that don't exist | Agent couldn't read the code, or guessed | Make sure the agent runs inside the repository. Ask it to list its evidence for each claim |
+| Docs are too long | No audience or scope given, or no preference set | State the audience and files you want (see [section 5](#5-control-the-output)), or set a length in `.doc-maker.md` |
+| Docs describe things that don't exist | Agent couldn't read the code, or guessed | Make sure the agent runs inside the repository; ask for the evidence score and the evidence behind any doubtful claim |
 | Competitor section is thin | No web access | Turn on web search, or supply the competitor list yourself |
