@@ -69,45 +69,76 @@ Documentation tends to fail in the same few ways:
 
 ## How it compares
 
-Several tools already generate documentation from code. They solve different parts of the problem, and some pair well with Doc Maker.
+Several tools already generate documentation from code. They solve different parts of the problem, and some work well together with Doc Maker. This section separates **facts** (from each project's own documentation, see [Sources](#sources)) from **interpretation** (marked as such).
 
-### The alternatives
+### At a glance
 
-| Tool | What it is | Output | Model |
-|------|------------|--------|-------|
-| [DeepWiki](https://deepwiki.com) (Cognition) | Hosted, AI-generated wiki for GitHub repositories, with diagrams and chat Q&A over the code | Web wiki on deepwiki.com | Hosted service; free for public repositories |
-| [Code Wiki](https://codewiki.google) (Google) | Gemini-powered wiki that regenerates after code changes, with diagrams and a chat agent | Hosted web wiki | Public preview, public repositories |
-| [readme-ai](https://github.com/eli64s/readme-ai) | Open-source Python CLI that generates a README using OpenAI, Anthropic, Gemini or Ollama | One `README.md` | Open source (MIT) |
-| [Mintlify](https://mintlify.com) | Documentation hosting platform with an AI writing agent and assistant | Hosted docs site | SaaS: free Starter plan, paid Enterprise |
-| [Swimm](https://swimm.io) | Code-coupled documentation that flags docs when the code they reference changes | Docs in IDE, PRs and Swimm | Commercial, pricing on request |
-| [tbls](https://github.com/k1LoW/tbls), [SchemaSpy](https://schemaspy.org) | Database documentation generators that read a live schema | Markdown/HTML + ER diagrams | Open source |
-| Claude Code `/init` | Built-in command that writes a `CLAUDE.md` | Context file for the agent, not human docs | Built in |
-| A plain prompt ("write a README") | Ask any AI agent with no rules | Whatever the model decides | Built in |
+| Tool | Type | Where docs live | Setup | Private code | Cost |
+|------|------|-----------------|-------|--------------|------|
+| **Doc Maker** | Skills for an AI agent | Markdown + Mermaid in your repo | Install plugin or copy folders | ✅ Works in your agent | Free (MIT) + your agent's usage |
+| [DeepWiki](https://deepwiki.com) (Cognition) | Hosted AI wiki | deepwiki.com | None for public repos (swap `github.com` for `deepwiki.com`) | 🟡 Needs a Devin account | Free for public repos |
+| [Code Wiki](https://codewiki.google) (Google) | Hosted AI wiki (Gemini) | codewiki.google | None for public repos | 🟡 CLI extension for private repos announced, waitlisted | Free public preview |
+| [readme-ai](https://github.com/eli64s/readme-ai) | Open-source CLI | One `README.md` | `pip install readmeai` + LLM API key (or offline mode) | ✅ Runs locally | Free + LLM API usage |
+| [Mintlify](https://mintlify.com) | Docs platform + AI agent | Hosted docs site, MDX in a docs repo | Account + GitHub app | ✅ Via GitHub app | Free Starter, paid Enterprise |
+| [Swimm](https://swimm.io) | Code-coupled docs platform | `.swm` Markdown files in your repo | Account + IDE extension | ✅ | Paid, pricing on request |
+| [tbls](https://github.com/k1LoW/tbls) / [SchemaSpy](https://schemaspy.org) | Schema doc generators | Markdown / HTML + ER diagrams | Binary + database connection | ✅ Runs locally | Free, open source |
+
+With any AI-based tool, including Doc Maker, your code is still sent to the model provider that tool or agent uses.
 
 ### Feature matrix
 
-Facts are taken from each project's own documentation (see [Sources](#sources)); "–" means not a documented feature.
+✅ documented feature · 🟡 partial or needs extra setup · ❌ not a documented feature
 
 | | Doc Maker | DeepWiki | Code Wiki | readme-ai | Mintlify | Swimm | tbls / SchemaSpy |
-|--|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| Docs saved as files in your repository | ✅ | – | – | ✅ | ✅ (docs repo) | ✅ | ✅ |
-| Full doc set (architecture, ADRs, security, ops, roadmap) | ✅ | partial² | partial² | – | – | – | – |
-| Threat model, role-permission matrix, DR runbooks, cost model | ✅ | – | – | – | – | – | – |
-| CI/CD, environment and cloud infrastructure docs | ✅ | – | – | – | – | – | – |
-| Database ER diagram + data dictionary | ✅ | – | – | – | – | – | ✅ |
-| Labels unverified claims as assumptions | ✅ | – | – | – | – | – | n/a |
-| Audience modes (developer / product / executive) | ✅ | – | – | – | – | – | – |
-| Competitor analysis with cited sources | ✅ | – | – | – | – | – | – |
-| Auto-updates when code changes | – | ✅ | ✅ | – | ✅ (agent automations) | ✅ (synced snippets) | ✅ (in CI) |
-| Chat Q&A over the codebase | via your agent | ✅ | ✅ | – | over docs | ✅ | – |
-| Hosted docs site | – | ✅ | ✅ | – | ✅ | ✅ | – |
-| Deterministic output (same input, same result) | – | – | – | – | – | – | ✅ |
-| Works on private code with no extra service¹ | ✅ | – | – | ✅ | – | – | ✅ |
-| Cost | Free (MIT) + your agent's usage | Free for public repos | Free preview | Free + LLM API usage | Free tier / Enterprise | Paid | Free |
+|:--|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| **What it covers** | | | | | | | |
+| README | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Architecture overview + diagrams | ✅ | ✅ | ✅ | ❌ | 🟡¹ | 🟡 | ❌ |
+| Design rationale (ADRs, trade-offs, when *not* to use) | ✅ | ❌ | ❌ | ❌ | 🟡¹ | ❌ | ❌ |
+| Security: auth model, role matrix, threat model | ✅ | ❌ | ❌ | ❌ | 🟡¹ | ❌ | ❌ |
+| Ops: CI/CD, environments, cloud, DR, cost | ✅ | ❌ | ❌ | ❌ | 🟡¹ | ❌ | ❌ |
+| Database ER diagram + data dictionary | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| API ↔ database mapping | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Competitor comparison with cited sources | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Audience modes (developer / product / executive) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **How it keeps output accurate** | | | | | | | |
+| Reads the actual code or schema | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Links claims to code locations | 🟡² | ✅ | ✅ | ❌ | ❌ | ✅ | n/a |
+| Labels unverified claims as assumptions | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | n/a |
+| Deterministic (same input, same output) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **How it stays current** | | | | | | | |
+| Updates automatically when code changes | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ in CI |
+| Chat Q&A over the codebase | 🟡³ | ✅ | ✅ | ❌ | ❌ (docs only) | ✅ | ❌ |
+| Hosted, searchable docs site | ❌ | ✅ | ✅ | ❌ | ✅ | ✅ | 🟡 static HTML |
 
-¹ Your code still goes to whichever model provider your agent or CLI uses. "No extra service" means no additional third party beyond that.
+¹ Mintlify's agent writes what you prompt it to write; these are not built-in document types.<br>
+² Required for security, debt and bottleneck findings (file and line); not for every claim.<br>
+³ Through the agent you run Doc Maker in, not a built-in chat.
 
-² Covers architecture, modules and diagrams. Design rationale, operations, limitations and roadmap are not documented features.
+### Which one fits?
+
+*Interpretation, based on the facts above.*
+
+```mermaid
+flowchart TD
+    Q1{Where should the<br/>docs live?}
+    Q1 -->|Hosted wiki,<br/>no setup| W[DeepWiki or Code Wiki]
+    Q1 -->|Docs website<br/>for customers| M[Mintlify]
+    Q1 -->|Files in<br/>your repo| Q2{What do you<br/>need?}
+    Q2 -->|Exact schema reference,<br/>regenerated in CI| T[tbls or SchemaSpy]
+    Q2 -->|Docs pinned to code<br/>snippets in the IDE| S[Swimm]
+    Q2 -->|A quick README<br/>from one command| R[readme-ai]
+    Q2 -->|Full doc set with rationale,<br/>security, ops and database| D[Doc Maker]
+```
+
+| If you need… | Best fit | Why |
+|--------------|----------|-----|
+| To understand an unfamiliar public repo right now | DeepWiki, Code Wiki | Nothing to install; chat and diagrams over the code |
+| A customer-facing docs website | Mintlify | Hosting, search and analytics are the product |
+| Docs that warn you when the code they quote changes | Swimm | Docs are coupled to code snippets |
+| A schema reference that can never drift | tbls, SchemaSpy | Deterministic and CI-friendly |
+| A README in one command | readme-ai | Single-purpose CLI |
+| A reviewed, versioned doc set: architecture, decisions, security, operations, database | Doc Maker | 85 rules covering the "why", with assumptions labelled |
 
 ### How Doc Maker is different
 
@@ -123,22 +154,24 @@ These are design differences, not quality claims. Judge the output on your own p
 ### Where the alternatives are stronger
 
 - **Always up to date:** DeepWiki, Code Wiki, Mintlify, Swimm and tbls can refresh docs automatically. With Doc Maker, you re-run it (see [GUIDE.md](GUIDE.md#8-keep-docs-up-to-date)).
-- **Zero setup for public repos:** DeepWiki and Code Wiki need only a URL.
+- **Zero setup:** DeepWiki and Code Wiki need only a URL for public repositories.
 - **Repeatable output:** tbls and SchemaSpy produce the same result every run and can fail CI on schema drift. Doc Maker's output is LLM-generated and varies between runs.
-- **Hosting and search:** Mintlify gives you a docs website with search and analytics. Doc Maker writes Markdown only.
+- **Hosting and search:** Mintlify, DeepWiki and Code Wiki give you a website. Doc Maker writes Markdown only.
 
 ### Use them together
 
 - **tbls or SchemaSpy + `database-docs`:** let the tool generate the exact schema reference in CI, and let Doc Maker explain the design, relationships and trade-offs around it.
 - **Mintlify (or MkDocs, Docusaurus) + `doc-maker`:** let Doc Maker draft the content, and let the platform host it.
-- **DeepWiki for exploring + Doc Maker for shipping:** use a hosted wiki to understand an unfamiliar repository, then use Doc Maker to write docs that live in that repository.
+- **DeepWiki for exploring + Doc Maker for shipping:** use a hosted wiki to understand a repository, then use Doc Maker to write docs that live in it.
 
 <a id="sources"></a>
 
 **Sources** (checked October 2026; products change, so verify before relying on a detail):
-[DeepWiki overview](https://huggingface.co/blog/lynn-mikami/deepwiki) ·
-[Google Code Wiki announcement coverage](https://www.theregister.com/2025/11/17/google_previews_code_wiki/) ·
+[DeepWiki announcement](https://cognition.com/blog/deepwiki) ·
+[DeepWiki guide (private repos)](https://codersera.com/blog/deepwiki-complete-developer-guide-2026/) ·
+[Google Code Wiki coverage](https://www.theregister.com/2025/11/17/google_previews_code_wiki/) ·
 [Code Wiki features](https://devops.com/google-code-wiki-aims-to-solve-documentations-oldest-problem/) ·
+[Code Wiki private repo status](https://smartscope.blog/en/generative-ai/google-gemini/google-code-wiki-repository-documentation-guide/) ·
 [readme-ai on PyPI](https://pypi.org/project/readmeai) ·
 [Mintlify pricing review](https://www.featurebase.app/blog/mintlify-pricing) ·
 [Mintlify agent docs](https://www.mintlify.com/docs/ai/agent) ·

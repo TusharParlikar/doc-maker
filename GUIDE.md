@@ -232,6 +232,174 @@ models in app/models. Include an ER diagram, a data dictionary with sensitivity 
 and the indexes each important query uses.
 ```
 
+### Example output: API ↔ database documentation
+
+This is what rules 43, 55, 63, 64 and 65 produce together. The project below is a **made-up shop API** used only to show the format; on your project, every box, table and arrow comes from your real routes, models and migrations.
+
+Prompt:
+
+```text
+Document how our API maps to the database: request path through the layers, which
+endpoints read and write which tables, the transaction for placing an order, and the
+order status lifecycle.
+```
+
+#### 1. Request path through the layers (rule 55)
+
+How one request travels from the API to the database and back, with the code location of each layer.
+
+```mermaid
+flowchart LR
+    C([Client]) -->|HTTPS + JWT| R[Route<br/>routes/orders.ts]
+    R --> MW[Auth + validation<br/>middleware/auth.ts]
+    MW --> S[OrderService<br/>services/order.ts]
+    S --> Repo[OrderRepository<br/>repos/order.ts]
+    S -.->|cache read| K[(Redis<br/>product cache)]
+    Repo --> ORM[ORM + connection pool<br/>max 10 connections]
+    ORM --> DB[(PostgreSQL)]
+    DB --> ORM --> Repo --> S --> R -->|JSON| C
+```
+
+#### 2. Which endpoints touch which tables (rule 63)
+
+**Red** arrows write, **blue** arrows only read. Tables that many endpoints write to (here `orders`) are where most bugs and lock contention hide. The table underneath gives the detail for each arrow.
+
+```mermaid
+flowchart LR
+    subgraph API
+        E1[POST /orders]
+        E2[GET /orders/:id]
+        E3[POST /orders/:id/cancel]
+        E6[POST /orders/:id/ship]
+        E5[POST /payments/webhook]
+        E4[GET /products]
+    end
+    subgraph Database
+        T1[(users)]
+        T2[(orders)]
+        T3[(order_items)]
+        T4[(products)]
+        T5[(payments)]
+    end
+    E1 -.-> T1
+    E1 --> T2
+    E1 --> T3
+    E1 --> T4
+    E2 -.-> T2
+    E2 -.-> T3
+    E3 --> T2
+    E3 --> T4
+    E6 --> T2
+    E5 --> T5
+    E5 --> T2
+    E4 -.-> T4
+    linkStyle 1,2,3,6,7,8,9,10 stroke:#d73a49,stroke-width:2px
+    linkStyle 0,4,5,11 stroke:#0969da,stroke-width:2px
+```
+
+The same mapping as a table, which is easier to review in a pull request:
+
+| Endpoint | Method | Reads | Writes | Transaction | Notes |
+|----------|--------|-------|--------|-------------|-------|
+| `/orders` | POST | `users`, `products` | `orders`, `order_items`, `products.stock` | ✅ one transaction | Locks product rows (`SELECT … FOR UPDATE`) |
+| `/orders/:id` | GET | `orders`, `order_items` | – | – | ⚠️ N+1: one query per item to load products |
+| `/orders/:id/cancel` | POST | `orders` | `orders.status`, `products.stock` | ❌ none | ⚠️ Two writes without a transaction: stock can be restored twice on retry |
+| `/products` | GET | `products` | – | – | Served from Redis for 60 s |
+| `/payments/webhook` | POST | `orders` | `payments`, `orders.status` | ✅ | Idempotent on `provider_event_id` (unique index) |
+| `/orders/:id/ship` | POST | `orders` | `orders.status` | – | Admin only; single-row update |
+
+The ⚠️ rows are the kind of finding the skill reports instead of hiding.
+
+#### 3. Data model behind those endpoints (rule 43)
+
+Only relationships that exist as foreign keys are drawn as solid lines.
+
+```mermaid
+erDiagram
+    users ||--o{ orders : places
+    orders ||--|{ order_items : contains
+    products ||--o{ order_items : "appears in"
+    orders ||--o{ payments : "paid by"
+
+    users {
+        uuid id PK
+        text email UK
+        text password_hash "sensitive"
+    }
+    orders {
+        uuid id PK
+        uuid user_id FK
+        text status "pending | paid | shipped | cancelled"
+        numeric total
+        timestamptz created_at
+    }
+    order_items {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        int quantity
+        numeric unit_price
+    }
+    products {
+        uuid id PK
+        text sku UK
+        int stock
+        numeric price
+    }
+    payments {
+        uuid id PK
+        uuid order_id FK
+        text provider_event_id UK
+        numeric amount
+    }
+```
+
+#### 4. One write, step by step (rule 65)
+
+`POST /orders` with its transaction boundary, plus the failure path when stock runs out.
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant API as POST /orders
+    participant Svc as OrderService
+    participant DB as PostgreSQL
+
+    Client->>API: items[], JWT
+    API->>API: Validate body, check JWT
+    API->>Svc: createOrder(userId, items)
+    Svc->>DB: BEGIN
+    Svc->>DB: SELECT stock FROM products WHERE id IN (...) FOR UPDATE
+    alt Enough stock
+        Svc->>DB: INSERT INTO orders
+        Svc->>DB: INSERT INTO order_items (one row per item)
+        Svc->>DB: UPDATE products SET stock = stock - qty
+        Svc->>DB: COMMIT
+        Svc-->>API: order
+        API-->>Client: 201 Created
+    else Out of stock
+        Svc->>DB: ROLLBACK
+        Svc-->>API: OutOfStockError
+        API-->>Client: 409 Conflict
+    end
+```
+
+#### 5. What the API can do to an order (rule 64)
+
+States come from the `orders.status` column; each arrow names the endpoint or job that causes it.
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending: POST /orders
+    pending --> paid: POST /payments/webhook
+    pending --> cancelled: POST /orders/:id/cancel
+    pending --> cancelled: expiry job (30 min)
+    paid --> shipped: POST /orders/:id/ship (admin)
+    paid --> cancelled: POST /orders/:id/cancel (refund)
+    shipped --> [*]
+    cancelled --> [*]
+```
+
 ---
 
 ## 7. Review the result
