@@ -186,7 +186,7 @@ State the audience in your request. The skill changes depth and emphasis to matc
 |----------|----------|----------------|
 | **Developers** | Precise setup, architecture, APIs, data flow, tests, failure handling | Long, many code blocks and diagrams |
 | **Product / business** | Problems solved, users, workflows, value, limitations | Medium, few code blocks |
-| **Executives** | Business impact, high-level architecture, risks, strategic choices | Short, one diagram at most |
+| **Executives** | Business impact, high-level architecture, risks, strategic choices | Short, high-level diagrams only |
 | **Open-source users** | What it is, why use it, install, quick start, examples, contributing | README first |
 
 The agent tells you which audience it assumed when it hands the docs over. Correct it if that's wrong.
@@ -307,7 +307,7 @@ Ideas for team-specific changes:
 | Skill not listed after install | Plugin not loaded in the current session | Run `/reload-plugins`, or restart Claude Code. Check `claude plugin list` |
 | Two copies of each skill | Installed as a plugin **and** copied into `~/.claude/skills/` | Keep one: uninstall the plugin, or delete the copied folders |
 | `Plugin "doc-maker" not found in marketplace` | Marketplace not added | Run `claude plugin marketplace add TusharParlikar/doc-maker` first |
-| Old rules after an update | Plugin version unchanged | Run `claude plugin update doc-maker@doc-maker` |
+| Old rules after an update | Auto-update is off by default for third-party marketplaces | Run `claude plugin update doc-maker@doc-maker`, or turn on auto-update for the marketplace in `/plugin` > **Marketplaces** |
 | Claude.ai rejects the upload | Zip doesn't contain the skill folder at its root | Zip the `doc-maker` folder itself, so the zip holds `doc-maker/SKILL.md` |
 | Docs are too long | No audience or scope given | State the audience and the files you want (see [section 5](#5-control-the-output)) |
 | Docs describe things that don't exist | Agent couldn't read the code, or guessed | Make sure the agent runs inside the repository. Ask it to list its evidence for each claim |

@@ -45,7 +45,7 @@ Documentation tends to fail in the same few ways:
 | Problem | What it looks like | What Doc Maker does |
 |---------|-------------------|---------------------|
 | **Invented features** | AI-written docs describe endpoints, flags or tables that don't exist | Inspects source, config, schemas and tests first. Marks anything it can't verify as an assumption |
-| **Template padding** | Every README has the same 20 headings, half of them empty or generic | Treats the 60 rules as a checklist. Writes only the sections the project needs and says why others don't apply |
+| **Template padding** | Every README has the same 20 headings, half of them empty or generic | Treats the 85 rules as a checklist. Writes only the sections the project needs and says why others don't apply |
 | **Missing "why"** | Tech stacks listed with no reasoning, so nobody knows what is safe to change | Explains why each technology and design decision exists, with alternatives and trade-offs |
 | **Hidden limitations** | Docs that oversell the project | Documents limitations, known issues and technical debt plainly |
 | **Wrong diagrams** | ER diagrams with relationships the database doesn't have | Builds diagrams from the real schema and code, and flags differences between them |
@@ -240,7 +240,7 @@ Copy-Item -Recurse doc-maker\skills\* $HOME\.claude\skills\
 ### Claude.ai and Claude Desktop
 
 1. Download `doc-maker.zip`, `database-docs.zip` and `architecture-docs.zip` from the [latest release](https://github.com/TusharParlikar/doc-maker/releases/latest).
-2. In Claude, open **Settings > Capabilities > Skills** and upload each zip.
+2. In Claude, open **Customize > Skills**, click **+**, choose **Create skill > Upload a skill**, and upload each zip.
 
 To build the zips yourself, zip each folder under `skills/` on its own. Each zip must contain the folder, with `SKILL.md` inside it:
 
@@ -251,7 +251,7 @@ zip -r database-docs.zip database-docs      # macOS / Linux (repeat for architec
 ```
 
 > [!NOTE]
-> Skills on Claude.ai need code execution to be turned on for your account. Without repository access, the skills can only document what you paste or upload into the chat.
+> Custom skills on Claude.ai need code execution to be turned on: **Settings > Capabilities** on Free, Pro and Max, or **Organization settings > Plugins & skills** on Team and Enterprise. Without repository access, the skills can only document what you paste or upload into the chat.
 
 ---
 
@@ -299,6 +299,7 @@ your-project/
     ├── OPERATIONS.md      Configuration, logging and monitoring, failure handling, runbooks
     ├── TECH_DEBT.md       Technical debt and performance bottlenecks, prioritized
     ├── DECISIONS.md       Architecture decision records
+    ├── MAINTAINING_DOCS.md  Which docs change when which code changes, PR checklist
     ├── COMPARISON.md      Competitors and alternatives, with sources
     └── GLOSSARY.md        Project-specific terms
 ```

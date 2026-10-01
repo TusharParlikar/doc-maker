@@ -7,7 +7,7 @@ description: Document a project's database evidence-first - database type/versio
 
 ## Purpose
 Document a project's data layer so that another developer can understand, safely change, operate and scale it.
-Companion to the **doc-maker** skill (which covers everything else); rules numbered 41-60 continue its numbering.
+Companion to the **doc-maker** skill (rules 1-40) and the **architecture-docs** skill (rules 61-85); rules numbered 41-60 continue that numbering.
 
 ## How to apply (read first)
 

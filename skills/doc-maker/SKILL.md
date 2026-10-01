@@ -20,7 +20,8 @@ Python API instead"). Never pad documentation with sections the project doesn't 
 2. **Evidence first (rule 31).** Before writing any technical claim, inspect the repository: file tree, entry
    points, dependency files, configuration, schemas/migrations, API routes, tests, CI and deployment files, and git
    history if useful. Prefer verifiable, read-only checks (grep for usages, run tests, `EXPLAIN` queries, `--help`
-   output) over assumptions. Mark anything unverifiable as an assumption.
+   output) over assumptions. Mark anything unverifiable as an assumption. Never run commands that change data,
+   infrastructure or git history (migrations, deploys, writes, commits) while documenting.
 3. **Relevance pass.** Walk rules 1-40 and decide for each: applies / partially / not applicable (with reason).
    If the project has a database, also load the **database-docs** skill for rules 41-60.
    If the project needs architecture or operations depth (auth model, role matrix, deployment/cloud/CI-CD, integrations,
@@ -32,12 +33,17 @@ Python API instead"). Never pad documentation with sections the project doesn't 
    `docs/` (for example `ARCHITECTURE.md`, `DATABASE.md`, `ML.md`, `OPERATIONS.md`, `DECISIONS.md`,
    `COMPARISON.md`, `GLOSSARY.md`). Create only the documents the project warrants. Follow the project's existing
    documentation conventions if it has them.
+   **Updating existing docs:** first check every claim in the current docs against the code and list the
+   mismatches (outdated, missing, wrong, unverifiable), then fix them. Keep correct content and the existing
+   structure unless the user asks for a rewrite.
 6. **Diagrams.** Use Mermaid (renders on GitHub) only where a diagram explains something text can't (rules 27, 28).
 7. **Honesty.** Document limitations, known issues, optimistic metrics and dead code plainly (rule 25). Never
    describe features that don't exist. Never include real secrets; use placeholders (rule 18).
 8. **Quality check before handing over (rule 34).** Re-verify numbers, commands, paths, links and names against the
    code; make terminology consistent across files (rule 32).
-9. **Don't commit or publish** documentation unless the user asks.
+9. **Hand over.** Summarize which files were written or changed, state the audience assumed, and list the
+   assumptions and open questions the user should confirm. Don't commit or publish documentation unless the user
+   asks.
 
 ## Rules
 
