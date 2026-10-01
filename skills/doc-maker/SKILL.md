@@ -1,6 +1,6 @@
 ---
 name: doc-maker
-description: Create professional, evidence-based documentation for software, AI/ML, data and engineering projects - README, architecture docs, feature/use-case docs, tech-stack rationale, ADRs, competitor comparison, deployment/security/testing/observability docs, glossary, Mermaid diagrams. Use when the user asks to document a project, write or rewrite a README, explain a codebase's architecture, or produce developer/product/executive documentation. Applies only the rules relevant to the project at hand; for database/schema documentation also use the database-docs skill.
+description: Create professional, evidence-based documentation for software, AI/ML, data and engineering projects - README, architecture docs, feature/use-case docs, tech-stack rationale, ADRs, competitor comparison, deployment/security/testing/observability docs, glossary, Mermaid diagrams. Use when the user asks to document a project, write or rewrite a README, explain a codebase's architecture, or produce developer/product/executive documentation. Applies only the rules relevant to the project at hand; for database/schema documentation also use the database-docs skill, and for in-depth architecture, security, infrastructure and operations documentation the architecture-docs skill.
 ---
 
 # doc-maker
@@ -23,6 +23,9 @@ Python API instead"). Never pad documentation with sections the project doesn't 
    output) over assumptions. Mark anything unverifiable as an assumption.
 3. **Relevance pass.** Walk rules 1-40 and decide for each: applies / partially / not applicable (with reason).
    If the project has a database, also load the **database-docs** skill for rules 41-60.
+   If the project needs architecture or operations depth (auth model, role matrix, deployment/cloud/CI-CD, integrations,
+   caching, queues, monitoring, disaster recovery, cost, threat model, technical debt), also load the
+   **architecture-docs** skill for rules 61-85.
 4. **External facts.** For competitor analysis, pricing, hosting limits or other outside facts, research with web
    search and cite sources. If reliable information isn't available, say so; never invent it.
 5. **Layout.** Default: a `README.md` that gives the overview and quick start and links to focused documents under

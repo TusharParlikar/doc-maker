@@ -6,12 +6,13 @@
 
 Doc Maker turns an AI coding agent into a careful technical writer. It reads the code before it writes anything, so the documentation it produces describes the project that exists rather than the one the agent imagines.
 
-It ships two skills:
+It ships three skills with 85 rules between them:
 
 | Skill | What it documents | Rules |
 |-------|-------------------|-------|
 | **`doc-maker`** | README, overview, problem definition, architecture, tech stack, project structure, features, users and use cases, API, AI/ML pipeline, data flow, security, deployment, installation, configuration, performance, reliability, testing, observability, design decisions (ADRs), competitor comparison, limitations, roadmap, glossary | 1-40 |
 | **`database-docs`** | Database type and version, schema, data dictionary, ER diagram built from the real schema, relationships and cascades, indexes, normalization, important queries, migrations, seed data, transactions, database security, backup and recovery, data lifecycle, app-to-database mapping, storage trade-offs | 41-60 |
+| **`architecture-docs`** | Auth model, role-permission matrix, API-to-database mapping, entity lifecycle, sequence and component diagrams, deployment, cloud infrastructure, CI/CD, environments, dependency graph, integrations and third-party APIs, caching, queues and events, logging and monitoring, error handling, disaster recovery, scalability, cost, technical debt, threat model, performance bottlenecks, future architecture, doc change checklist | 61-85 |
 
 Works with **Claude Code**, **Claude.ai**, **Claude Desktop**, and any agent that reads the open [Agent Skills](https://agentskills.io) `SKILL.md` format (Cursor, Codex, Gemini CLI, GitHub Copilot and others).
 
@@ -91,6 +92,8 @@ Facts are taken from each project's own documentation (see [Sources](#sources));
 |--|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
 | Docs saved as files in your repository | ✅ | – | – | ✅ | ✅ (docs repo) | ✅ | ✅ |
 | Full doc set (architecture, ADRs, security, ops, roadmap) | ✅ | partial² | partial² | – | – | – | – |
+| Threat model, role-permission matrix, DR runbooks, cost model | ✅ | – | – | – | – | – | – |
+| CI/CD, environment and cloud infrastructure docs | ✅ | – | – | – | – | – | – |
 | Database ER diagram + data dictionary | ✅ | – | – | – | – | – | ✅ |
 | Labels unverified claims as assumptions | ✅ | – | – | – | – | – | n/a |
 | Audience modes (developer / product / executive) | ✅ | – | – | – | – | – | – |
@@ -114,6 +117,7 @@ These are design differences, not quality claims. Judge the output on your own p
 - **It covers the "why", not just the "what".** Code-reading wikis describe structure: modules, files, call graphs. Doc Maker also asks for the problem being solved, design decisions and trade-offs (ADRs), when *not* to use the project, limitations and a roadmap.
 - **It is built against hallucination.** Rules require evidence for each claim, a label on anything unverified, and a quality pass that re-checks commands, paths and names against the code. Diagrams must match the real schema and services.
 - **It writes for different readers.** The same codebase can produce developer docs, a product overview or an executive summary.
+- **It goes deep on architecture and operations.** Twenty-five rules (61-85) cover what most generated docs skip: auth model and role-permission matrix, CI/CD and environments, cloud infrastructure, caching and queues, disaster-recovery runbooks, cost drivers, a STRIDE threat model, technical debt and a target architecture.
 - **It goes deep on databases.** Twenty rules (41-60) add what schema tools don't: why the database was chosen, which queries each index serves, transaction boundaries, data lifecycle and security, with discrepancies between schema, ORM and code reported instead of guessed.
 
 ### Where the alternatives are stronger
@@ -151,9 +155,13 @@ These are design differences, not quality claims. Judge the output on your own p
 flowchart LR
     A[Request<br/>'document this repo'] --> B[Pick audience<br/>and scope]
     B --> C[Inspect evidence<br/>code, config, schema,<br/>tests, CI, git]
-    C --> D[Relevance pass<br/>rules 1-60:<br/>applies / partial / n/a]
+    C --> D[Relevance pass<br/>rules 1-85:<br/>applies / partial / n/a]
     D --> E{Database<br/>present?}
     E -- yes --> F[database-docs<br/>rules 41-60]
+    D --> J{Infra, auth,<br/>integrations?}
+    J -- yes --> K[architecture-docs<br/>rules 61-85]
+    J -- no --> G
+    K --> G
     E -- no --> G[Write docs]
     F --> G
     G --> H[Quality check<br/>commands, paths, links,<br/>names, diagrams]
@@ -201,7 +209,7 @@ Check that it loaded:
 claude plugin list
 ```
 
-Installed as a plugin, the skills are namespaced as `/doc-maker:doc-maker` and `/doc-maker:database-docs`.
+Installed as a plugin, the skills are namespaced as `/doc-maker:doc-maker`, `/doc-maker:database-docs` and `/doc-maker:architecture-docs`.
 
 ### Any agent (Cursor, Codex, Gemini CLI, Copilot and others)
 
@@ -211,13 +219,13 @@ Use the [skills CLI](https://skills.sh), which installs `SKILL.md` skills for ma
 npx skills add TusharParlikar/doc-maker
 ```
 
-Add `--skill doc-maker` or `--skill database-docs` to install only one of them.
+Add `--skill doc-maker`, `--skill database-docs` or `--skill architecture-docs` to install only some of them.
 
 ### Claude Code: manual copy
 
 ```bash
 git clone https://github.com/TusharParlikar/doc-maker.git
-cp -r doc-maker/skills/doc-maker doc-maker/skills/database-docs ~/.claude/skills/
+cp -r doc-maker/skills/* ~/.claude/skills/
 ```
 
 To install for one project only, copy the folders into `<project>/.claude/skills/` instead. Commit them there and everyone who works on the project gets them.
@@ -231,7 +239,7 @@ Copy-Item -Recurse doc-maker\skills\* $HOME\.claude\skills\
 
 ### Claude.ai and Claude Desktop
 
-1. Download `doc-maker.zip` and `database-docs.zip` from the [latest release](https://github.com/TusharParlikar/doc-maker/releases/latest).
+1. Download `doc-maker.zip`, `database-docs.zip` and `architecture-docs.zip` from the [latest release](https://github.com/TusharParlikar/doc-maker/releases/latest).
 2. In Claude, open **Settings > Capabilities > Skills** and upload each zip.
 
 To build the zips yourself, zip each folder under `skills/` on its own. Each zip must contain the folder, with `SKILL.md` inside it:
@@ -239,7 +247,7 @@ To build the zips yourself, zip each folder under `skills/` on its own. Each zip
 ```bash
 cd skills
 tar -a -cf doc-maker.zip doc-maker          # Windows 10+ (built-in tar)
-zip -r database-docs.zip database-docs      # macOS / Linux
+zip -r database-docs.zip database-docs      # macOS / Linux (repeat for architecture-docs)
 ```
 
 > [!NOTE]
@@ -263,10 +271,12 @@ More examples:
 | "Generate an ER diagram and data dictionary for our database." | `docs/DATABASE.md` with a Mermaid `erDiagram` that matches the real foreign keys |
 | "Explain this service to our leadership team." | Short executive overview: business value, high-level architecture, risks |
 | "Write ADRs for the main design decisions." | `docs/DECISIONS.md` in Context / Problem / Options / Decision / Rationale / Trade-offs / Consequences format |
+| "Write a threat model and role-permission matrix for this service." | `docs/SECURITY.md` with auth flow diagrams, a roles × actions matrix, and STRIDE threats with mitigations and gaps |
+| "Document our deployment, CI/CD and environments." | `docs/INFRASTRUCTURE.md` from Dockerfiles, IaC and CI config, with deployment and pipeline diagrams |
 | "Compare this project with its alternatives." | `docs/COMPARISON.md` with a matrix, sources, and verified facts kept apart from interpretation |
 | "Our docs are stale. Check them against the code." | A list of mismatches, then corrected docs |
 
-To call a skill directly, type `/doc-maker` or `/database-docs` (or `/doc-maker:doc-maker` when installed as a plugin).
+To call a skill directly, type `/doc-maker`, `/database-docs` or `/architecture-docs` (or `/doc-maker:doc-maker` and so on when installed as a plugin).
 
 See [GUIDE.md](GUIDE.md) for more recipes.
 
@@ -282,8 +292,12 @@ your-project/
 └── docs/
     ├── ARCHITECTURE.md    Components, data flow, sequence diagrams, tech stack rationale
     ├── DATABASE.md        Schema, ER diagram, data dictionary, indexes, migrations
+    ├── SECURITY.md        Auth model, role-permission matrix, threat model
+    ├── INFRASTRUCTURE.md  Deployment, cloud, environments, CI/CD, disaster recovery, scaling, cost
+    ├── INTEGRATIONS.md    External services and third-party APIs
     ├── ML.md              Data, models, prompts, evaluation, limitations (AI/ML projects)
-    ├── OPERATIONS.md      Deployment, configuration, observability, failure handling
+    ├── OPERATIONS.md      Configuration, logging and monitoring, failure handling, runbooks
+    ├── TECH_DEBT.md       Technical debt and performance bottlenecks, prioritized
     ├── DECISIONS.md       Architecture decision records
     ├── COMPARISON.md      Competitors and alternatives, with sources
     └── GLOSSARY.md        Project-specific terms
@@ -295,7 +309,7 @@ Diagrams are written in [Mermaid](https://mermaid.js.org), which GitHub, GitLab 
 
 ## Rule index
 
-The full text of each rule is in the skill files: [`skills/doc-maker/SKILL.md`](skills/doc-maker/SKILL.md) and [`skills/database-docs/SKILL.md`](skills/database-docs/SKILL.md).
+The full text of each rule is in the skill files: [`skills/doc-maker/SKILL.md`](skills/doc-maker/SKILL.md), [`skills/database-docs/SKILL.md`](skills/database-docs/SKILL.md) and [`skills/architecture-docs/SKILL.md`](skills/architecture-docs/SKILL.md).
 
 ### `doc-maker` (rules 1-40)
 
@@ -321,6 +335,17 @@ The full text of each rule is in the skill files: [`skills/doc-maker/SKILL.md`](
 | **Integrity and safety** | 50 Transactions and integrity · 51 Database security · 52 Backup and recovery |
 | **Architecture** | 55 Database-to-application mapping · 56 Database architecture diagram · 58 Trade-offs · 59 Multi-database architecture |
 | **Verification** | 60 Validation against schema, ORM models, migrations, SQL and configuration |
+
+### `architecture-docs` (rules 61-85)
+
+| Area | Rules |
+|------|-------|
+| **Security** | 61 Authentication and authorization model · 62 Role-permission matrix · 82 Security threat model |
+| **Structure and behaviour** | 63 API ↔ database mapping · 64 Entity lifecycle diagrams · 65 Sequence diagrams · 66 Component diagrams · 71 Dependency graph |
+| **Infrastructure and delivery** | 67 Deployment architecture · 68 Cloud infrastructure · 69 CI/CD pipeline · 70 Environment architecture |
+| **Integrations and runtime** | 72 External services and integrations · 73 Third-party APIs · 74 Caching · 75 Message queues and events · 76 Logging and monitoring · 77 Error handling |
+| **Resilience, scale and cost** | 78 Disaster recovery · 79 Scalability strategy · 80 Cost architecture · 83 Performance bottleneck analysis |
+| **Evolution** | 81 Technical debt analysis · 84 Future architecture · 85 Documentation change checklist |
 
 ---
 
@@ -351,7 +376,7 @@ The full text of each rule is in the skill files: [`skills/doc-maker/SKILL.md`](
 | Action | Plugin install | Manual install |
 |--------|----------------|----------------|
 | Update | `claude plugin update doc-maker@doc-maker` | `git pull`, then copy the folders again |
-| Uninstall | `claude plugin uninstall doc-maker@doc-maker` | Delete `~/.claude/skills/doc-maker` and `~/.claude/skills/database-docs` |
+| Uninstall | `claude plugin uninstall doc-maker@doc-maker` | Delete `doc-maker`, `database-docs` and `architecture-docs` from `~/.claude/skills/` |
 
 ---
 
@@ -370,7 +395,7 @@ It follows your existing documentation layout and does not commit anything unles
 By design. The skill only writes sections that apply to your project. Ask for a section by name if you want it.
 
 **How much context does it use?**
-About 300 tokens per session for the two skill descriptions. The full rules load only when a skill runs: about 3.8k tokens for `doc-maker` and 1.8k for `database-docs` (measured with `claude plugin details doc-maker@doc-maker`).
+About 540 tokens per session for the three skill descriptions. The full rules load only when a skill runs: about 3.8k tokens for `doc-maker`, 1.8k for `database-docs` and 3.8k for `architecture-docs` (measured with `claude plugin details doc-maker@doc-maker`).
 
 **Can I change the rules?**
 Yes. Fork the repository and edit the `SKILL.md` files. See [GUIDE.md](GUIDE.md#customize-the-rules).
@@ -382,7 +407,7 @@ Yes. Fork the repository and edit the `SKILL.md` files. See [GUIDE.md](GUIDE.md#
 Issues and pull requests are welcome.
 
 - **Bug in the output?** Open an issue with the prompt you used, the kind of project (language, framework, database), and what was wrong.
-- **New rule or change?** Keep rules evidence-based and project-agnostic. Add database rules to `database-docs`, and everything else to `doc-maker`.
+- **New rule or change?** Keep rules evidence-based and project-agnostic. Add database rules to `database-docs`, architecture, infrastructure and operations rules to `architecture-docs`, and everything else to `doc-maker`.
 - **Before you open a pull request**, run:
 
   ```bash

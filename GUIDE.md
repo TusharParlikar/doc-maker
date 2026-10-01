@@ -1,6 +1,6 @@
 # Doc Maker guide
 
-This guide shows how to get good documentation out of the `doc-maker` and `database-docs` skills: how they are triggered, what to ask for, how to review the result, and how to change the rules. For installation, see the [README](README.md#install).
+This guide shows how to get good documentation out of the `doc-maker`, `database-docs` and `architecture-docs` skills: how they are triggered, what to ask for, how to review the result, and how to change the rules. For installation, see the [README](README.md#install).
 
 ## Contents
 
@@ -25,13 +25,14 @@ An agent loads only each skill's name and description at startup. When your requ
 |-------|------------------------------|
 | `doc-maker` | "document this project", "write / rewrite the README", "explain the architecture", "write developer / product / executive docs" |
 | `database-docs` | "ER diagram", "document the schema", "data dictionary", "document the database", or when `doc-maker` finds a database |
+| `architecture-docs` | "threat model", "role-permission matrix", "document our CI/CD / deployment / infrastructure", "sequence diagrams", "disaster recovery", "cost breakdown", "technical debt", or when `doc-maker` needs architecture or operations depth |
 
 You can also call a skill directly:
 
 | Install method | Command |
 |----------------|---------|
-| Plugin | `/doc-maker:doc-maker`, `/doc-maker:database-docs` |
-| Manual copy or `npx skills` | `/doc-maker`, `/database-docs` |
+| Plugin | `/doc-maker:doc-maker`, `/doc-maker:database-docs`, `/doc-maker:architecture-docs` |
+| Manual copy or `npx skills` | `/doc-maker`, `/database-docs`, `/architecture-docs` |
 
 Add your request after the command, for example `/doc-maker write a README for new contributors`.
 
@@ -55,7 +56,7 @@ sequenceDiagram
     opt Competitor comparison requested
         Agent->>Web: Search, collect sources
     end
-    Agent->>Agent: Relevance pass over rules 1-60
+    Agent->>Agent: Relevance pass over rules 1-85
     Agent->>Repo: Write README.md and docs/*.md
     Agent->>Agent: Re-check commands, paths, links, names
     Agent->>You: Summary, audience, assumptions, open questions
@@ -119,6 +120,53 @@ the file and line instead.
 Document the ML pipeline in docs/ML.md: data sources, preprocessing, models, prompts,
 evaluation method, hallucination risks and fallbacks. Say which metrics were actually
 measured and which are not.
+```
+
+### Threat model and access control
+
+```text
+Write docs/SECURITY.md: the authentication and authorization model with sequence
+diagrams, a role-permission matrix derived from the code, and a STRIDE threat model
+with trust boundaries, mitigations and gaps. Reference secrets by file and line only.
+```
+
+### Infrastructure and delivery
+
+```text
+Write docs/INFRASTRUCTURE.md from our Dockerfiles, IaC and CI config: deployment
+architecture, cloud resources, environments and how they differ, the CI/CD pipeline
+from commit to production, and the rollback procedure.
+```
+
+### Disaster recovery runbook
+
+```text
+Document disaster recovery: state our RTO/RPO or say none are defined, list the
+backups and replication that actually exist, and write step-by-step runbooks for
+database loss, a bad deploy and leaked credentials. Mark recommendations separately.
+```
+
+### Cost and scaling
+
+```text
+Document our cost drivers and scalability strategy. Map each cost to the component
+and billing unit, use dated official prices, and give formulas where usage is unknown.
+Describe what breaks first at 10x and 100x load.
+```
+
+### Technical debt and future architecture
+
+```text
+Analyze technical debt and performance bottlenecks with file locations, impact, risk
+and effort. Then propose a target architecture as a "proposed" diagram, with
+incremental migration steps and ADRs for the big decisions.
+```
+
+### Keep docs in sync with code
+
+```text
+Create docs/MAINTAINING_DOCS.md that maps code areas to the docs that must change
+with them, plus a pull-request checklist. Suggest CI checks we could add.
 ```
 
 ### Onboarding checklist
@@ -231,7 +279,7 @@ A good habit: run the second prompt before each release.
 The rules are plain Markdown. To change them:
 
 1. Fork this repository.
-2. Edit `skills/doc-maker/SKILL.md` or `skills/database-docs/SKILL.md`.
+2. Edit the `SKILL.md` file under `skills/doc-maker/`, `skills/database-docs/` or `skills/architecture-docs/`.
 3. Keep the YAML front matter at the top of each file valid:
    - `name`: lowercase letters, numbers and hyphens, the same as the folder name
    - `description`: what the skill does **and** when to use it, under 1024 characters. The agent uses this text to decide when to load the skill.

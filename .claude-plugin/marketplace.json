@@ -1,6 +1,6 @@
 {
   "name": "doc-maker",
-  "description": "Documentation skills for Claude: doc-maker and database-docs.",
+  "description": "Documentation skills for Claude: doc-maker, database-docs and architecture-docs.",
   "owner": {
     "name": "Tushar Parlikar",
     "url": "https://github.com/TusharParlikar"
@@ -9,7 +9,7 @@
     {
       "name": "doc-maker",
       "source": "./",
-      "description": "Evidence-based project documentation skills: doc-maker and database-docs."
+      "description": "Evidence-based project documentation skills: doc-maker, database-docs and architecture-docs (85 rules)."
     }
   ]
 }
