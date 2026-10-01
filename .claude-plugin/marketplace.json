@@ -2,7 +2,8 @@
   "name": "doc-maker",
   "description": "Documentation skills for Claude: doc-maker and database-docs.",
   "owner": {
-    "name": "Tushar"
+    "name": "Tushar Parlikar",
+    "url": "https://github.com/TusharParlikar"
   },
   "plugins": [
     {

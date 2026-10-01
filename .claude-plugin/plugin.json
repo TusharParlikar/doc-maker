@@ -1,10 +1,33 @@
 {
   "name": "doc-maker",
+  "displayName": "Doc Maker",
   "description": "Evidence-based project documentation skills: doc-maker (README, architecture, features, ADRs, comparisons, Mermaid diagrams) and database-docs (schema, ER diagram, indexes, migrations, data dictionary).",
   "version": "1.0.0",
   "author": {
-    "name": "Tushar"
+    "name": "Tushar Parlikar",
+    "url": "https://github.com/TusharParlikar"
   },
+  "homepage": "https://github.com/TusharParlikar/doc-maker#readme",
+  "repository": "https://github.com/TusharParlikar/doc-maker",
   "license": "MIT",
-  "keywords": ["documentation", "readme", "architecture", "mermaid", "er-diagram", "database", "skills"]
+  "keywords": [
+    "documentation",
+    "docs",
+    "readme",
+    "readme-generator",
+    "technical-writing",
+    "architecture",
+    "system-design",
+    "mermaid",
+    "diagrams",
+    "er-diagram",
+    "database",
+    "schema",
+    "data-dictionary",
+    "adr",
+    "api-docs",
+    "developer-experience",
+    "agent-skills",
+    "claude-skills"
+  ]
 }
