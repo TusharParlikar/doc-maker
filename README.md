@@ -29,6 +29,7 @@ Works with **Claude Code**, **Claude.ai**, **Claude Desktop**, and any agent tha
 - [Rule index](#rule-index)
 - [Principles](#principles)
 - [Limitations](#limitations)
+- [Roadmap](#roadmap)
 - [Update and uninstall](#update-and-uninstall)
 - [FAQ](#faq)
 - [Contributing](#contributing)
@@ -402,6 +403,12 @@ The full text of each rule is in the skill files: [`skills/doc-maker/SKILL.md`](
 - **Large repositories cost tokens and time.** Evidence gathering reads many files. On a large monorepo, scope the request to one service or folder.
 - **Markdown only.** No hosting, search or versioned docs site. Pair it with MkDocs, Docusaurus or Mintlify if you need one.
 - **Competitor facts age.** Comparisons use web search at the time of the run, and products change.
+
+---
+
+## Roadmap
+
+- **Coming in an upcoming update: adaptive skills.** After writing the docs, the skill will ask which parts you want improved (for example "the security section is too shallow"), take your feedback, and refine just those parts. *Planned, not available yet.*
 
 ---
 
